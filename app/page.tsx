@@ -1,4 +1,4 @@
-'use client'; 
+'use client';
 // Příznak říká Next.js: tato komponenta má běžet na straně klienta (v prohlížeči)
 
 import { useEffect, useState } from 'react';
@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 
 import supabase from '@/lib/supabase';
 // Import přednastaveného klienta pro připojení k Supabase databázi
+
+import Link from 'next/link';
 
 import './styles.css';
 
@@ -26,7 +28,7 @@ export default function Home() {
   // Stav pro seznam všech osob z databáze
   const [people, setPeople] = useState<Person[]>([]);
 
-  // useEffect zajistí, že se data načtou hned po načtení stránky (pouze jednou)
+  // useEffect zajistí, že se data načtou hned po načtení stránky (pouze jednou - to zajistuje [])
   useEffect(() => {
     fetchPeople(); // zavolá funkci pro načtení dat
   }, []);
@@ -64,6 +66,9 @@ export default function Home() {
 
   return (
     <main className="container">
+
+      <Link href="/admin" className='link'>Go to admin page</Link>
+
       <h1>Add person</h1>
 
       {/* Formulář pro zadání nové osoby */}
@@ -94,7 +99,7 @@ export default function Home() {
         <ul>
           {people.map((p) => (
             <li key={p.id}>
-              {p.first_name} {p.last_name} ({p.birth_date})
+              {p.id} {p.first_name} {p.last_name} ({p.birth_date})
             </li>
           ))}
         </ul>
