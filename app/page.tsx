@@ -99,7 +99,7 @@ export default function Home() {
         <ul>
           {people.map((p) => (
             <li key={p.id}>
-              {p.id} {p.first_name} {p.last_name} ({p.birth_date})
+              {p.first_name} {p.last_name} ({p.birth_date})
             </li>
           ))}
         </ul>
