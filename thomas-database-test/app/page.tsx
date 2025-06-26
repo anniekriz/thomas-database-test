@@ -1,95 +1,104 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'; 
+// Příznak říká Next.js: tato komponenta má běžet na straně klienta (v prohlížeči)
+
+import { useEffect, useState } from 'react';
+// React hooky – useState pro práci se stavem, useEffect pro volání kódu po načtení
+
+import supabase from '@/lib/supabase';
+// Import přednastaveného klienta pro připojení k Supabase databázi
+
+import './styles.css';
+
+// Definice typu pro jednu osobu – jak vypadá záznam v databázi
+type Person = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+};
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  // Stavy pro jednotlivá pole formuláře
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  // Stav pro seznam všech osob z databáze
+  const [people, setPeople] = useState<Person[]>([]);
+
+  // useEffect zajistí, že se data načtou hned po načtení stránky (pouze jednou)
+  useEffect(() => {
+    fetchPeople(); // zavolá funkci pro načtení dat
+  }, []);
+
+  // Funkce načítá všechny osoby z tabulky "Person", seřazené podle data narození
+  const fetchPeople = async () => {
+    const { data, error } = await supabase.from('Person').select('*').order('birth_date');
+    if (!error && data) setPeople(data); // pokud je vše v pořádku, uložíme data do stavu
+  };
+
+  // Obsluha odeslání formuláře
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); // zabrání klasickému refreshi stránky
+
+    // Pokud chybí jakékoli pole, neodesílej
+    if (!firstName || !lastName || !birthDate) return;
+
+    // Vložení nové osoby do Supabase
+    const { error } = await supabase.from('Person').insert([
+      {
+        first_name: firstName,
+        last_name: lastName,
+        birth_date: birthDate,
+      },
+    ]);
+
+    // Pokud je vše v pořádku, formulář se vyprázdní a načtou se nová data
+    if (!error) {
+      setFirstName('');
+      setLastName('');
+      setBirthDate('');
+      fetchPeople();
+    }
+  };
+
+  return (
+    <main className="container">
+      <h1>Add person</h1>
+
+      {/* Formulář pro zadání nové osoby */}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="First name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)} /* Kdykoli uživatel napíše něco do pole pro jméno, tento řádek vezme nový text a uloží ho do proměnné firstName */
+        />
+        <input
+          type="text"
+          placeholder="Last name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+        />
+        <input
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+        />
+        <button type="submit">Save</button>
+      </form>
+
+      {/* Výpis seznamu osob */}
+      <div>
+        <h2>Person list</h2>
+        <ul>
+          {people.map((p) => (
+            <li key={p.id}>
+              {p.first_name} {p.last_name} ({p.birth_date})
+            </li>
+          ))}
+        </ul>
+      </div>
+    </main>
   );
 }
